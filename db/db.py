@@ -89,10 +89,32 @@ class Database:
     def delete_user(self, username):
         conn = self._connect()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM users WHERE username=?", username)
+        cursor.execute("DELETE FROM users WHERE username=?", (username,))
         conn.commit()
         conn.close()
+        
+    def deposit(self, username, amount):
+        old_balance = self.get_balance(username)
+        conn = self._connect()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET balance = ? WHERE username = ?", (old_balance+amount, username,))
+        conn.commit()
+        conn.close()
+        return True
     
+    def withdrawal(self, username, amount):
+        old_balance = self.get_balance(username)
+        if old_balance - amount < 0:
+            print("ERROR: cannot afford it")
+            return False
+        
+        conn = self._connect()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET balance = ? WHERE username = ?", (old_balance-amount, username,))
+        conn.commit()
+        conn.close()
+        
+        
     def contains_user(self, username):
         conn = self._connect()
         cursor = conn.cursor()
@@ -163,5 +185,7 @@ class Database:
     
     def buy_position(self, user_id, portfolio_id, ticker_id, quantity, amount):
         conn = self._connect()
+        
+
 
 foo = Database()

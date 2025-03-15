@@ -62,7 +62,10 @@ class HomePage(QWidget):
         layout.addWidget(self.username_label)
         layout.addWidget(self.balance_label)
         self.setLayout(layout)
-        
+      
+    def showEvent(self, event):
+        balance = self.db.get_balance(self.username)
+        self.balance_label.setText(f"Balance: ${balance}")  
     def open_trade_page(self):
         self.trade_click.emit(self.username)
         
