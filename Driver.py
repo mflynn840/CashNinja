@@ -8,7 +8,7 @@ from AccountPages.Positions import PositionsPage
 from AccountPages.History import HistoryPage
 from AccountPages.Summary import SummaryPage
 from AccountPages.Deposit import DepositPage
-from UserCreationPage import CreateUserPage
+from CreateUser import CreateUserPage
 
 class MainApplication(QWidget):
     def __init__(self, db:Database):

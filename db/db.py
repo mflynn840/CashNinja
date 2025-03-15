@@ -1,12 +1,17 @@
 import sqlite3
 import bcrypt
 import yfinance as yf
-
+from util import get_ticker_dict
 
 class Database:
-    def __init__(self, db_name="users.db"):
+    def __init__(self, db_name="users.db", update_tickers=False):
         self.db_name = db_name
-        self.create_schema()
+        if not self.is_init():
+            self.create_schema()
+            self._add_all_tickers()
+        else:
+            if update_tickers:
+                self.update_all_tickers()
         
     ''' use private function connect to control how the db is modified
     '''
@@ -36,6 +41,7 @@ class Database:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ticker_symbol TEXT UNIQUE NOT NULL,
             current_price REAL,
+            company_name TEXT,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -57,6 +63,18 @@ class Database:
         conn.commit()
         conn.close()
     
+    def is_init(self):
+        conn = self._connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('users', 'portfolios', 'tickers', 'positions')")
+        tables = cursor.fetchall()
+        
+        if not tables:
+            return False
+
+        existing_tables = set(table[0] for table in tables)
+        return {'users', 'portfolios', 'tickers', 'positions'}.issubset(existing_tables)
+        
     def create_user(self, username, password, email=None):
         conn = self._connect()
         cursor = conn.cursor()
@@ -131,12 +149,37 @@ class Database:
         conn.close()
         return balance
     
-    def create_ticker(self, symbol, price):
+    def create_ticker(self, symbol, name, price):
         conn = self._connect()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO tickers (ticker_symbol, current_price) VALUES (?, ?)", symbol, price)
+        try:
+            cursor.execute("INSERT INTO tickers (ticker_symbol, company_name, current_price) VALUES (?, ?, ?)", (symbol, name, price))
+        except sqlite3.IntegrityError:
+            conn.close()
+            return False
         conn.commit()
         conn.close()
+        return True
+        
+    def _add_all_tickers(self, debugLimit=50):
+        
+        ticker_dict = get_ticker_dict()
+        for i, (tic, name) in enumerate(ticker_dict.items()):   
+            price = yf.Ticker(tic).history(period="1d")["Close"].iloc[-1]
+            self.create_ticker(tic, name, price)
+            if debugLimit is not None and i > debugLimit:
+                break
+
+    
+    def get_all_tickers(self):
+        conn = self._connect()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT ticker_symbol, current_price FROM tickers")
+        all_stocks = cursor.fetchall()
+        conn.close()
+        return all_stocks
+        
         
     def update_ticker(self, symbol):
         stock = yf.Ticker(symbol)
@@ -144,15 +187,19 @@ class Database:
         current_price = price_dat["Close"].iloc[0]
         conn = self._connect()
         cursor = conn.cursor()
-        cursor.execute("UPDATE tickers SET current_price=? WHERE ticker_symbol=?", current_price, symbol)
+        cursor.execute("UPDATE tickers SET current_price=? WHERE ticker_symbol=?", (current_price, symbol))
         conn.commit()
         conn.close()
         
+    def update_all_tickers(self):
+        ticker_dict = get_ticker_dict()
+        for (tic, _) in ticker_dict.items():   
+            self.update_ticker(tic)
         
     def delete_ticker(self, symbol):
         conn = self._connect()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM tickers WHERE ticker_symbol=?", symbol)
+        cursor.execute("DELETE FROM tickers WHERE ticker_symbol=?", (symbol))
         conn.commit()
         conn.close()
         
@@ -187,5 +234,6 @@ class Database:
         conn = self._connect()
         
 
-
-foo = Database()
+if __name__ == "__main__":
+    foo = Database()
+    foo.get_all_tickers()
