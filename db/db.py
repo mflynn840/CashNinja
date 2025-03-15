@@ -82,7 +82,7 @@ class Database:
         user = cursor.fetchone()
         conn.close()
         
-        if user and bcrypt.checkpw(password.encode('utf-8'), user[1].encode('utf-8')):
+        if user and bcrypt.checkpw(password.encode('utf-8'), user[1]):
             return True
         return False
         
@@ -100,6 +100,14 @@ class Database:
         user_exists = cursor.fetchone() is not None
         conn.close()
         return user_exists
+    
+    def get_balance(self, username:str):
+        conn = self._connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT balance FROM users WHERE username = ?", (username,))
+        balance = cursor.fetchone()[0]
+        conn.close()
+        return balance
     
     def create_ticker(self, symbol, price):
         conn = self._connect()

@@ -3,7 +3,11 @@ from Login import LoginPage
 from PyQt6.QtWidgets import QApplication, QWidget
 import sys
 from MainPage import HomePage
-
+from AccountPages.Trade import TradePage
+from AccountPages.Positions import PositionsPage
+from AccountPages.History import HistoryPage
+from AccountPages.Summary import SummaryPage
+from AccountPages.Deposit import DepositPage
 from UserCreationPage import CreateUserPage
 
 class MainApplication(QWidget):
@@ -20,11 +24,40 @@ class MainApplication(QWidget):
         self.login_page.show()
     
     def switch_to_home(self, username:str):
-        self.home_page = HomePage(username)
+        self.home_page = HomePage(self.db, username)
+        self.home_page.trade_click.connect(self.switch_to_trade)
+        self.home_page.positions_click.connect(self.switch_to_positions)
+        self.home_page.history_click.connect(self.switch_to_history)
+        self.home_page.summary_click.connect(self.switch_to_summary)
+        self.home_page.deposit_click.connect(self.switch_to_deposit)
         self.home_page.show()
         self.login_page.close()
         
     
+    def switch_to_trade(self, username:str):
+        self.trade_page = TradePage(db, username, self.home_page)
+        self.trade_page.show()
+        self.home_page.hide()
+    def switch_to_positions(self, username: str):
+        self.positions_page = PositionsPage(self.db, username, self.home_page)
+        self.positions_page.show()
+        self.home_page.hide()
+
+    def switch_to_history(self, username: str):
+        self.history_page = HistoryPage(self.db, username, self.home_page)
+        self.history_page.show()
+        self.home_page.hide()
+
+    def switch_to_summary(self, username: str):
+        self.summary_page = SummaryPage(self.db, username, self.home_page)
+        self.summary_page.show()
+        self.home_page.hide()
+
+    def switch_to_deposit(self, username: str):
+        self.deposit_page = DepositPage(self.db, username, self.home_page)
+        self.deposit_page.show()
+        self.home_page.hide()
+        
     def create_user(self, action:bool):
         if action:
             self.user_creation_page = CreateUserPage(self.db)
