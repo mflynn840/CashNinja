@@ -9,7 +9,8 @@ def get_ticker_dict(path="./company_tickers.json"):
                 ticker_dict[v["ticker"]] = v["title"]
                 
             return ticker_dict
-                      
+
+
     except FileNotFoundError:
         print("Could not find JSON")
     

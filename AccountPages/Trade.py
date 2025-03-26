@@ -1,5 +1,5 @@
 
-from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout,QPushButton, QFrame, QScrollArea
+from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout,QPushButton, QFrame, QScrollArea, QLineEdit
 
 class TradePage(QWidget):
     def __init__(self, db, un, home_page):
@@ -15,7 +15,6 @@ class TradePage(QWidget):
         #make a frame for the widgets
         frame = QFrame()
         layout = QVBoxLayout()
-        
         all_stocks = self.db.get_all_tickers()
         #add the content to the frame
         for (tic, price) in all_stocks:
@@ -48,10 +47,46 @@ class TradePage(QWidget):
 
     
     def buy_stock(self, tic):
-        print("buy " + tic) 
+        
+        print("buy " + tic)
+
         
     def sell_stock(self, tic):
         print("sell " + tic) 
     def closeEvent(self, event):
         self.home_page.show()
         self.close()
+        
+class BuyWindow(QWidget):
+    def __init__(self, db, tic):
+        super().__init__()
+        self.db = db
+        layout = QVBoxLayout()
+        self.tic_txt = QLabel(f"Ticker: {tic}", self)
+        price = db.get_ticker_price(tic)
+        self.price_txt = QLabel(f"Share Price: ${price:.2f}")
+        self.amount_txt = QLabel("Number of Shares: ")
+        self.amount_input = QLineEdit()
+        self.submit_button = QPushButton("Buy Now")
+        
+        self.submit_button.clicked.connect(self.buy_stock)
+        
+        layout.addWidget(self.tic_txt)
+        layout.addWidget(self.price_txt)
+        layout.addWidget(self.amount_txt)
+        layout.addWidget(self.amount_input)
+        layout.addWidget(self.submit_button)
+    
+    def buy_stock(self):
+        amount = self.amount_input.text()
+        if not amount:
+            QMessageBox.warning(self, "Input Error", "Please enter a username and password to login", QMessageBox.StandardButton.Ok)
+            return
+        try:
+            x=1
+        except Exception:
+            print("I suck")
+
+class SellWindow(QWidget):
+    def __init__(self):
+        super().__init__()

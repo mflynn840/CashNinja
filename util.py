@@ -12,5 +12,6 @@ def get_ticker_dict(path="./company_tickers.json"):
                       
     except FileNotFoundError:
         print("Could not find JSON")
-    
+  
+
 
