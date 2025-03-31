@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton
 from PyQt6.QtCore import pyqtSignal
 import sqlite3
 import re  # for validating the email format
-from db.db import Database
+from db.Database import Database
 
 class CreateUserPage(QWidget):
     success = pyqtSignal(bool)

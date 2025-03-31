@@ -1,7 +1,7 @@
 import sys
 import sqlite3
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
-from db.db import Database
+from db.Database import Database
 from PyQt6.QtCore import pyqtSignal
 class LoginPage(QWidget):
     login_successful = pyqtSignal(str)

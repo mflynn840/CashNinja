@@ -1,13 +1,17 @@
 
-from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout,QPushButton, QFrame, QScrollArea, QLineEdit
+from PyQt6.QtWidgets import (QWidget, QLabel, QVBoxLayout, 
+                             QMessageBox, QHBoxLayout,QPushButton,
+                             QFrame, QScrollArea, QLineEdit)
+from DialogBoxes.TradeDialog import TradeDialog
 
 class TradePage(QWidget):
-    def __init__(self, db, un, home_page):
+    def __init__(self, db, username, portfolio_id, home_page):
         super().__init__()
         self.setWindowTitle("Trade")
         self.home_page = home_page
         self.db = db
-        self.un = un
+        self.username = username
+        self.portfolio_id = portfolio_id
         self.make_ui()
       
     def make_ui(self):
@@ -20,14 +24,12 @@ class TradePage(QWidget):
         for (tic, price) in all_stocks:
             entry_layout = QHBoxLayout()
             label = QLabel(f"{tic} : ${price:.2f}", self)
-            buy_button = QPushButton("Buy")
-            buy_button.clicked.connect(lambda checked, tic=tic: self.buy_stock(tic))
-            sell_button = QPushButton("Sell")
-            sell_button.clicked.connect(lambda checked, tic=tic: self.sell_stock(tic))
-            
+            trade_button = QPushButton("Trade")
+            trade_button.clicked.connect(lambda checked, tic=tic: self.trade_stock(tic))
+
             entry_layout.addWidget(label)
-            entry_layout.addWidget(buy_button)
-            entry_layout.addWidget(sell_button)
+            entry_layout.addWidget(trade_button)
+
             
             entry_widget = QWidget()
             entry_widget.setLayout(entry_layout)
@@ -46,47 +48,26 @@ class TradePage(QWidget):
         self.setLayout(main_layout)
 
     
-    def buy_stock(self, tic):
+    def trade_stock(self, tic):
         
-        print("buy " + tic)
-
+        owned_shares = self.db.get_owned_shares(self.portfolio_id, tic)
+        dialog = TradeDialog(tic, owned_shares)
+        dialog.trade_signal.connect(self.handle_trade)
+        dialog.exec()
         
-    def sell_stock(self, tic):
-        print("sell " + tic) 
+    def handle_trade(self, buy_or_sell:str, amount:int, currency:str, tic:str):
+        
+        
+        if currency != "Shares":
+            amount /= self.db.get_ticker_price(tic)
+            
+        if buy_or_sell == "Buy":
+            self.db.buy_stock(self.username, self.portfolio_id, tic, amount)
+        else:
+            self.db.sell_stock(self.username, self.portfolio_id, tic, amount)
+        
+        
     def closeEvent(self, event):
         self.home_page.show()
         self.close()
         
-class BuyWindow(QWidget):
-    def __init__(self, db, tic):
-        super().__init__()
-        self.db = db
-        layout = QVBoxLayout()
-        self.tic_txt = QLabel(f"Ticker: {tic}", self)
-        price = db.get_ticker_price(tic)
-        self.price_txt = QLabel(f"Share Price: ${price:.2f}")
-        self.amount_txt = QLabel("Number of Shares: ")
-        self.amount_input = QLineEdit()
-        self.submit_button = QPushButton("Buy Now")
-        
-        self.submit_button.clicked.connect(self.buy_stock)
-        
-        layout.addWidget(self.tic_txt)
-        layout.addWidget(self.price_txt)
-        layout.addWidget(self.amount_txt)
-        layout.addWidget(self.amount_input)
-        layout.addWidget(self.submit_button)
-    
-    def buy_stock(self):
-        amount = self.amount_input.text()
-        if not amount:
-            QMessageBox.warning(self, "Input Error", "Please enter a username and password to login", QMessageBox.StandardButton.Ok)
-            return
-        try:
-            x=1
-        except Exception:
-            print("I suck")
-
-class SellWindow(QWidget):
-    def __init__(self):
-        super().__init__()

@@ -1,5 +1,7 @@
 import sqlite3
-from db.Managers import PortfolioManager, TickerManager, UserManager
+from db.PortfolioManager import PortfolioManager
+from db.TickerManager import TickerManager
+from db.UserManager import UserManager
 
 
 class Database:
@@ -84,6 +86,8 @@ class Database:
         return {'users', 'portfolios', 'tickers', 'positions'}.issubset(existing_tables)
         
 
+
+        
     def contains_user(self, username):
         conn = self._connect()
         cursor = conn.cursor()
@@ -93,21 +97,50 @@ class Database:
         return user_exists
     
 
-    def buy_position(self, username, portfolio_id, tic, quantity):
+    def sell_stock(self, username, portfolio_id, tic, shares):
         conn = self._connect()
         cursor = conn.cursor()
         
-        self.update_ticker(tic)
-        price = quantity*self.get_ticker_price(tic)
+        #ensure the user has enough stock to sell
+        owned_shares = self.get_owned_shares(portfolio_id, tic)
+        if owned_shares < shares:
+            print("ERROR: you do not have enough shares to sell")
+            return None
+        
+        #get the sale price
+        sale_price = shares*self.get_ticker_price(tic)
+        new_owned_shares = owned_shares - shares
+        self.deposit(username, sale_price)
+        
+        #modify the number of stocks owned
+        if new_owned_shares == 0:
+            cursor.execute('''DELETE FROM positions 
+                           WHERE portfolio_id = ? AND ticker_id = 
+                           (SELECT id FROM tickers WHERE ticker_symbol = ?)''', (portfolio_id, tic))
+        else:
+            cursor.execute('''UPDATE positions SET quantity = ? 
+                           WHERE portfolio_id = ? AND ticker_id = 
+                           (SELECT id FROM tickers WHERE ticker_symbol = ?)''', (new_owned_shares, portfolio_id, tic))
+        
+
+        conn.commit()
+        conn.close()
+        
+    
+    def buy_stock(self, username, portfolio_id, tic, shares):
+        conn = self._connect()
+        cursor = conn.cursor()
+
+        price = shares*self.get_ticker_price(tic)
         balance = self.get_balance(username)
         if price > balance:
             print("error cant afford it")
             return False
         self.withdrawal(username, price)
-        
-        
+    
+    
         tic_id = self.get_tic_id(tic)
-        cursor.execute("INSERT INTO positions (portfolio_id, ticker_id, quantity, purchase_price) values (?, ?, ?, ?)", (portfolio_id, tic_id, quantity, price))
+        cursor.execute("INSERT INTO positions (portfolio_id, ticker_id, quantity, purchase_price) values (?, ?, ?, ?)", (portfolio_id, tic_id, shares, price))
         cursor.close()
         
 
@@ -121,4 +154,4 @@ class Database:
         
 if __name__ == "__main__":
     foo = Database()
-    foo.get_all_tickers()
+    print(foo.get_all_tickers())

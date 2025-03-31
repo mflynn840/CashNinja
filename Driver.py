@@ -1,4 +1,4 @@
-from db.db import Database
+from db.Database import Database
 from Login import LoginPage
 from PyQt6.QtWidgets import QApplication, QWidget
 import sys
@@ -34,10 +34,11 @@ class MainApplication(QWidget):
         self.login_page.close()
         
     
-    def switch_to_trade(self, username:str):
-        self.trade_page = TradePage(db, username, self.home_page)
+    def switch_to_trade(self, username:str, portfolio_id:int):
+        self.trade_page = TradePage(db, username, portfolio_id, self.home_page)
         self.trade_page.show()
         self.home_page.hide()
+        
     def switch_to_positions(self, username: str):
         self.positions_page = PositionsPage(self.db, username, self.home_page)
         self.positions_page.show()

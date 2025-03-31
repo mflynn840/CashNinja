@@ -75,6 +75,6 @@ class TickerManager:
         self.update_ticker(tic)
         conn = self._connect()
         cursor = conn.cursor()
-        cursor.execute("SELECT price FROM tickers WHERE ticker_symbol=?", (tic))
+        cursor.execute("SELECT current_price FROM tickers WHERE ticker_symbol=?", (tic))
         price = cursor.fetchone()
         return price

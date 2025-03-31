@@ -6,7 +6,6 @@ import sqlite3
     -account creation/edit/delete
     -balance getting
     -withdrwaling money from account
-
 '''
 
 class UserManager:
@@ -38,6 +37,17 @@ class UserManager:
         return balance
     
     
+    def get_portfolio_names(self, user_id):
+        conn = self._connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT portfolio_name from portfolios where user_id=?", (user_id,))
+        portfolios = cursor.fetchall()
+        conn.close()
+        print([portfolio[0] for portfolio in portfolios])
+        return [portfolio[0] for portfolio in portfolios]
+    
+    
+    
     def verify_user(self, username, password):
         conn = self._connect()
         cursor = conn.cursor()
@@ -48,7 +58,18 @@ class UserManager:
         if user and bcrypt.checkpw(password.encode('utf-8'), user[1]):
             return True
         return False
-        
+     
+    def get_user_id(self, username):
+        conn = self._connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE username=?", (username,))
+        result = cursor.fetchone()
+        conn.close()
+        if result:
+            return result[0]
+        else:
+            return None
+           
     def delete_user(self, username):
         conn = self._connect()
         cursor = conn.cursor()
