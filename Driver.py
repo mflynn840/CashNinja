@@ -1,14 +1,14 @@
 from db.Database import Database
-from Login import LoginPage
+from MainPages.Login import LoginPage
 from PyQt6.QtWidgets import QApplication, QWidget
 import sys
-from MainPage import HomePage
+from AccountPages.MainPage import HomePage
 from AccountPages.Trade import TradePage
 from AccountPages.Positions import PositionsPage
 from AccountPages.History import HistoryPage
 from AccountPages.Summary import SummaryPage
 from AccountPages.Deposit import DepositPage
-from CreateUser import CreateUserPage
+from MainPages.CreateUser import CreateUserPage
 
 class MainApplication(QWidget):
     def __init__(self, db:Database):
@@ -18,7 +18,6 @@ class MainApplication(QWidget):
         self.login_page.login_successful.connect(self.switch_to_home)
         self.login_page.make_user.connect(self.create_user)
         self.setWindowTitle("Main application")
-        
         
     def show_login(self):
         self.login_page.show()
@@ -33,14 +32,13 @@ class MainApplication(QWidget):
         self.home_page.show()
         self.login_page.close()
         
-    
     def switch_to_trade(self, username:str, portfolio_id:int):
         self.trade_page = TradePage(db, username, portfolio_id, self.home_page)
         self.trade_page.show()
         self.home_page.hide()
         
-    def switch_to_positions(self, username: str):
-        self.positions_page = PositionsPage(self.db, username, self.home_page)
+    def switch_to_positions(self, username: str, portfolio_id: int):
+        self.positions_page = PositionsPage(self.db, username, portfolio_id, self.home_page)
         self.positions_page.show()
         self.home_page.hide()
 
@@ -63,8 +61,7 @@ class MainApplication(QWidget):
         if action:
             self.user_creation_page = CreateUserPage(self.db)
             self.user_creation_page.show()
-            
-            
+             
 if __name__ == "__main__":
 
     db = Database()

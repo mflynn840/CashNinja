@@ -44,7 +44,8 @@ class Database:
             user_id INTEGER,
             portfolio_name TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            CONSTRAINT unique_user_portfolio UNIQUE (user_id, portfolio_name)
         );
 
         CREATE TABLE IF NOT EXISTS tickers (
@@ -60,8 +61,8 @@ class Database:
             ticker_id INTEGER,
             quantity INTEGER,
             purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            purchase_price REAL,
-            PRIMARY KEY (portfolio_id, ticker_id, purchase_price),
+            cost_basis REAL,
+            PRIMARY KEY (portfolio_id, ticker_id, cost_basis),
             FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE,
             FOREIGN KEY (ticker_id) REFERENCES tickers(id) ON DELETE CASCADE
         );
@@ -131,16 +132,30 @@ class Database:
         conn = self._connect()
         cursor = conn.cursor()
 
-        price = shares*self.get_ticker_price(tic)
+        purchase_price = shares*self.get_ticker_price(tic)
         balance = self.get_balance(username)
-        if price > balance:
+
+        if purchase_price > balance:
             print("error cant afford it")
             return False
-        self.withdrawal(username, price)
-    
-    
+        
+        self.withdrawal(username, purchase_price)
         tic_id = self.get_tic_id(tic)
-        cursor.execute("INSERT INTO positions (portfolio_id, ticker_id, quantity, purchase_price) values (?, ?, ?, ?)", (portfolio_id, tic_id, shares, price))
+        old_position = self.get_position(portfolio_id, tic)
+        
+        
+        if old_position:
+            new_shares = shares + old_position["shares"]
+            new_cost_basis = purchase_price + old_position["cost_basis"]
+            cursor.execute("""UPDATE positions 
+                           SET quantity = ?, cost_basis = ? 
+                           WHERE portfolio_id = ? AND ticker_id = ?""", (new_shares, new_cost_basis, portfolio_id, tic_id))
+            conn.commit()
+        else:
+            cursor.execute("""INSERT INTO positions 
+                           (portfolio_id, ticker_id, quantity, cost_basis) 
+                           values (?, ?, ?, ?)""", (portfolio_id, tic_id, shares, purchase_price))
+            conn.commit()
         cursor.close()
         
 

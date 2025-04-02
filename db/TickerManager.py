@@ -1,5 +1,5 @@
 import sqlite3
-from util import get_ticker_dict
+from db.util import get_ticker_dict
 import yfinance as yf
 
 '''Implements logic to update, add and remove tickers from the available stocks'''
@@ -34,8 +34,8 @@ class TickerManager:
         conn = self._connect()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT ticker_id FROM tickers where ticker_name=?", (tic_name))
-        t_id = cursor.fetchone()
+        cursor.execute("SELECT id FROM tickers where ticker_symbol=?", (tic_name,))
+        t_id = cursor.fetchone()[0]
         conn.close()
         return t_id
     
@@ -64,17 +64,18 @@ class TickerManager:
         for (tic, _) in ticker_dict.items():   
             self.update_ticker(tic)
         
-    def delete_ticker(self, symbol):
+    def delete_ticker(self, tic):
         conn = self._connect()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM tickers WHERE ticker_symbol=?", (symbol))
+        cursor.execute("DELETE FROM tickers WHERE ticker_symbol=?", (tic,))
         conn.commit()
         conn.close()
     
-    def get_ticker_price(self, tic):
+    def get_ticker_price(self, tic:str):
         self.update_ticker(tic)
         conn = self._connect()
         cursor = conn.cursor()
-        cursor.execute("SELECT current_price FROM tickers WHERE ticker_symbol=?", (tic))
-        price = cursor.fetchone()
+        cursor.execute("SELECT current_price FROM tickers WHERE ticker_symbol=?", (tic,))
+        price = cursor.fetchone()[0]
+        conn.close()
         return price

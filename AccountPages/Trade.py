@@ -57,10 +57,8 @@ class TradePage(QWidget):
         
     def handle_trade(self, buy_or_sell:str, amount:int, currency:str, tic:str):
         
-        
         if currency != "Shares":
             amount /= self.db.get_ticker_price(tic)
-            
         if buy_or_sell == "Buy":
             self.db.buy_stock(self.username, self.portfolio_id, tic, amount)
         else:

@@ -20,24 +20,36 @@ class PortfolioManager:
         conn.commit()
         conn.close()
         
+    def get_position(self, portfolio_id, tic):
+                #return all positions in the portfolio with given id
+        conn = self._connect()
+        cursor = conn.cursor()
+        cursor.execute('''SELECT p.quantity, p.cost_basis
+                       FROM positions p JOIN tickers t ON p.ticker_id = t.id
+                       WHERE p.portfolio_id = ? AND t.ticker_symbol = ?''', (portfolio_id, tic,))
+        position = cursor.fetchone()
+        if position:
+            position = {"shares" : position[0], "cost_basis" : position[1]}
+        conn.close()
+        return position
         
-    def get_portfolio_positions(self, portfolio_id):
+    def get_all_positions(self, portfolio_id):
         
         #return all positions in the portfolio with given id
         conn = self._connect()
         cursor = conn.cursor()
-        cursor.execute('''SELECT t.ticker_symbol, p.quantity
+        cursor.execute('''SELECT t.ticker_symbol, p.quantity, p.cost_basis
                        FROM positions p 
                        JOIN tickers t ON p.ticker_id = t.id
                        WHERE p.portfolio_id = ?''', (portfolio_id, ))
         positions = cursor.fetchall()
         conn.close()
-        positions_dict = {ticker: quantity for ticker, quantity in positions}
+        positions_dict = {ticker: {'quantity' : quantity, "cost_basis" : cost_basis} for ticker, quantity, cost_basis in positions}
         return positions_dict
     
     def get_owned_shares(self, portfolio_id, ticker):
         try:
-            return self.get_portfolio_positions(portfolio_id)[ticker]
+            return self.get_all_positions(portfolio_id)[0]
         except KeyError:
             return 0.0
             

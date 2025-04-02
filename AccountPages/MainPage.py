@@ -16,7 +16,7 @@ from AccountPages.Trade import TradePage
 
 class HomePage(QWidget):
     trade_click = pyqtSignal(str, int)
-    positions_click = pyqtSignal(str)
+    positions_click = pyqtSignal(str, int)
     history_click = pyqtSignal(str)
     summary_click = pyqtSignal(str)
     deposit_click = pyqtSignal(str)
@@ -87,13 +87,19 @@ class HomePage(QWidget):
         user_info_widget.setLayout(user_info_layout)
         return user_info_widget
         
-    
-    
-
     def create_portfolio(self):
-        self.db.create_portfolio(self.user_id, self.portfolio_name_edit.text())
-        self.portfolio_selector.addItem(self.portfolio_name_edit.text())
         
+        if self.portfolio_name_edit.text() not in self.db.get_portfolio_names(self.user_id):
+            self.db.create_portfolio(self.user_id, self.portfolio_name_edit.text())
+            self.portfolio_selector.addItem(self.portfolio_name_edit.text())
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setWindowTitle("Portfolio Creation Failed")
+            msg.setText("Could not create Portfolio because this name is taken")
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.exec()
+
     def get_portfolio_widget(self):
     
         #create a new portfolio section
@@ -135,13 +141,14 @@ class HomePage(QWidget):
         
         cur_portfolio_name = self.portfolio_selector.currentText()
         cur_portfolio_id = self.db.get_portfolio_id(cur_portfolio_name, self.user_id)
-        
         self.trade_click.emit(self.username, cur_portfolio_id)
         
 
     def open_positions_page(self):
-        self.positions_click.emit(self.username)
-
+        cur_portfolio_name = self.portfolio_selector.currentText()
+        cur_portfolio_id = self.db.get_portfolio_id(cur_portfolio_name, self.user_id)
+        self.positions_click.emit(self.username, cur_portfolio_id)
+        
     def open_history_page(self):
         self.history_click.emit(self.username)
 

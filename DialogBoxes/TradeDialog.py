@@ -6,7 +6,7 @@ from PyQt6.QtCore import pyqtSignal
 
 class TradeDialog(QDialog):
     
-    trade_signal = pyqtSignal(str, int, str, str)
+    trade_signal = pyqtSignal(str, float, str, str)
     
     def __init__(self, ticker:str, owned_shares):
         super().__init__()
@@ -53,10 +53,12 @@ class TradeDialog(QDialog):
         
     def submit_trade(self):
         buy_or_sell = self.buy_sell_selector.currentText()
-        amount = self.amount_input.text()
+        amount = self.amount_input.text().strip()
         currency = self.currency_selector.currentText()
-        
+
         if amount.isdigit():
+            amount = float(amount)
+
             self.trade_signal.emit(buy_or_sell, amount, currency, self.ticker)
             self.accept()
         else:
