@@ -1,8 +1,12 @@
 import sys
 import sqlite3
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+from PyQt6.QtWidgets import (QHBoxLayout, QWidget, QVBoxLayout,
+                             QLabel, QLineEdit, QPushButton, QMessageBox,)
 from db.Database import Database
 from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QPixmap
+
+
 class LoginPage(QWidget):
     login_successful = pyqtSignal(str)
     make_user = pyqtSignal(bool)
@@ -14,22 +18,37 @@ class LoginPage(QWidget):
         self.setWindowTitle('Login Window')
         self.setGeometry(300,300,300,150)
         
-        #widgets
+        self.setup_ui()
+        
+    def setup_ui(self):
+        #login fields
         self.username_txt = QLabel("Username: ")
         self.username_input = QLineEdit()
         self.pw_txt = QLabel("Password: ")
         self.pw_input = QLineEdit()
-        #self.pw_input.setEchoMode(QLineEdit.Password)
+        
+        #buttons
         self.login_button = QPushButton("Login")
         self.make_user_button = QPushButton("Create Account")
-        
-        
-        #connect button to login
         self.login_button.clicked.connect(self.check_login)
         self.make_user_button.clicked.connect(self.create_user_handler)
         
+        
+        #logo
+        logo_layout = QHBoxLayout()
+        logo = QLabel()
+        logo_pixmap = QPixmap("./Pictures/Ninja.png").scaled(100, 100)
+        logo.setPixmap(logo_pixmap)
+        logo.setScaledContents(True)
+        slogan = QLabel("Cash Ninja - Strike Fast. Save Smart. Master the Art of Money")
+        logo_layout.addWidget(logo)
+        logo_layout.addWidget(slogan)
+        logo_widget = QWidget()
+        logo_widget.setLayout(logo_layout)
+        
         #layout
         layout = QVBoxLayout()
+        layout.addWidget(logo_widget)
         layout.addWidget(self.username_txt)
         layout.addWidget(self.username_input)
         layout.addWidget(self.pw_txt)

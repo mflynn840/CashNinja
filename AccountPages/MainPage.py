@@ -13,6 +13,8 @@ from AccountPages.Positions import PositionsPage
 from AccountPages.Summary import SummaryPage
 from AccountPages.Trade import TradePage
 
+from PyQt6.QtGui import QPixmap
+
 
 class HomePage(QWidget):
     trade_click = pyqtSignal(str, int)
@@ -42,12 +44,15 @@ class HomePage(QWidget):
         self.buttons_widget = self.get_buttons_widget()
         self.user_info_widget = self.get_user_info_widget()
         self.portfolios_widget = self.get_portfolio_widget()
+        
+        
         #Bottom of screen (below buttons layout)      
         bottom_layout = QHBoxLayout()
         bottom_layout.addWidget(self.user_info_widget)
         bottom_layout.addWidget(self.portfolios_widget)
         bottom_widget = QWidget()
         bottom_widget.setLayout(bottom_layout)
+        
         
         #entire screen
         main_layout = QVBoxLayout()
@@ -81,8 +86,16 @@ class HomePage(QWidget):
     def get_user_info_widget(self):
         #users info panel layout widget
         user_info_layout = QVBoxLayout()
+        
+        logo = QLabel(self)
+        logo_pixmap = QPixmap("./Pictures/Ninja.png")
+        logo_pixmap = logo_pixmap.scaled(200, 200)
+        logo.setPixmap(logo_pixmap)
+        logo.setScaledContents(True)
+        
         user_info_layout.addWidget(self.username_label)
         user_info_layout.addWidget(self.balance_label)
+        user_info_layout.addWidget(logo)
         user_info_widget = QWidget()
         user_info_widget.setLayout(user_info_layout)
         return user_info_widget

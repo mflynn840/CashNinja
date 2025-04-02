@@ -3,6 +3,8 @@ from PyQt6.QtWidgets import (QWidget, QLabel, QVBoxLayout,
                              QMessageBox, QHBoxLayout,QPushButton,
                              QFrame, QScrollArea, QLineEdit)
 from DialogBoxes.TradeDialog import TradeDialog
+from DialogBoxes.PriceHistoryDialog import PriceHistoryDialog
+
 
 class TradePage(QWidget):
     def __init__(self, db, username, portfolio_id, home_page):
@@ -20,17 +22,21 @@ class TradePage(QWidget):
         frame = QFrame()
         layout = QVBoxLayout()
         all_stocks = self.db.get_all_tickers()
-        #add the content to the frame
+        
+        #add each entry to the fram
         for (tic, price) in all_stocks:
             entry_layout = QHBoxLayout()
             label = QLabel(f"{tic} : ${price:.2f}", self)
+            
+            #buttons
             trade_button = QPushButton("Trade")
             trade_button.clicked.connect(lambda checked, tic=tic: self.trade_stock(tic))
-
+            history_button = QPushButton("Price History")
+            history_button.clicked.connect(lambda checked, tic=tic: self.show_price_history(tic))
+            #row for the stock
             entry_layout.addWidget(label)
             entry_layout.addWidget(trade_button)
-
-            
+            entry_layout.addWidget(history_button)
             entry_widget = QWidget()
             entry_widget.setLayout(entry_layout)
             layout.addWidget(entry_widget)
@@ -48,6 +54,11 @@ class TradePage(QWidget):
         self.setLayout(main_layout)
 
     
+    def show_price_history(self, tic):
+        
+        dialog = PriceHistoryDialog(tic)
+        dialog.exec()
+        
     def trade_stock(self, tic):
         
         owned_shares = self.db.get_owned_shares(self.portfolio_id, tic)

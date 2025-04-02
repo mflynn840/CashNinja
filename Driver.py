@@ -10,6 +10,9 @@ from AccountPages.Summary import SummaryPage
 from AccountPages.Deposit import DepositPage
 from MainPages.CreateUser import CreateUserPage
 
+
+
+
 class MainApplication(QWidget):
     def __init__(self, db:Database):
         super().__init__()
