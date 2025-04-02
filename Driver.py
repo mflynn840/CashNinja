@@ -1,14 +1,14 @@
 from db.Database import Database
-from MainPages.Login import LoginPage
+from GUI.MainPages.Login import LoginPage
 from PyQt6.QtWidgets import QApplication, QWidget
 import sys
-from AccountPages.MainPage import HomePage
-from AccountPages.Trade import TradePage
-from AccountPages.Positions import PositionsPage
-from AccountPages.History import HistoryPage
-from AccountPages.Summary import SummaryPage
-from AccountPages.Deposit import DepositPage
-from MainPages.CreateUser import CreateUserPage
+from GUI.AccountPages.MainPage import HomePage
+from GUI.AccountPages.Trade import TradePage
+from GUI.AccountPages.Positions import PositionsPage
+from GUI.AccountPages.History import HistoryPage
+from GUI.AccountPages.Summary import SummaryPage
+from GUI.AccountPages.Deposit import DepositPage
+from GUI.MainPages.CreateUser import CreateUserPage
 
 
 

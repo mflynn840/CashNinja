@@ -7,11 +7,11 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout,
 from db.Database import Database
 from PyQt6.QtCore import pyqtSignal
 
-from AccountPages.Deposit import DepositPage
-from AccountPages.History import HistoryPage
-from AccountPages.Positions import PositionsPage
-from AccountPages.Summary import SummaryPage
-from AccountPages.Trade import TradePage
+from .Deposit import DepositPage
+from .History import HistoryPage
+from .Positions import PositionsPage
+from .Summary import SummaryPage
+from .Trade import TradePage
 
 from PyQt6.QtGui import QPixmap
 

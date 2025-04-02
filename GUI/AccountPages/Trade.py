@@ -2,8 +2,8 @@
 from PyQt6.QtWidgets import (QWidget, QLabel, QVBoxLayout, 
                              QHBoxLayout,QPushButton,
                              QFrame, QScrollArea)
-from DialogBoxes.TradeDialog import TradeDialog
-from DialogBoxes.PriceHistoryDialog import PriceHistoryDialog
+from ..DialogBoxes.TradeDialog import TradeDialog
+from ..DialogBoxes.PriceHistoryDialog import PriceHistoryDialog
 
 
 class TradePage(QWidget):
