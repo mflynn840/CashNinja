@@ -1,18 +1,8 @@
-import sys
-import sqlite3
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, 
                             QLabel, QLineEdit, QFormLayout, QPushButton, QMessageBox,
                             QHBoxLayout, QComboBox, QDialog)
-
 from db.Database import Database
 from PyQt6.QtCore import pyqtSignal
-
-from .Deposit import DepositPage
-from .History import HistoryPage
-from .Positions import PositionsPage
-from .Summary import SummaryPage
-from .Trade import TradePage
-
 from PyQt6.QtGui import QPixmap
 
 
@@ -88,7 +78,7 @@ class HomePage(QWidget):
         user_info_layout = QVBoxLayout()
         
         logo = QLabel(self)
-        logo_pixmap = QPixmap("./Pictures/Ninja.png")
+        logo_pixmap = QPixmap("./GUI/Pictures/Ninja.png")
         logo_pixmap = logo_pixmap.scaled(200, 200)
         logo.setPixmap(logo_pixmap)
         logo.setScaledContents(True)

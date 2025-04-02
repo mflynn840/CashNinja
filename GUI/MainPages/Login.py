@@ -37,7 +37,7 @@ class LoginPage(QWidget):
         #logo
         logo_layout = QHBoxLayout()
         logo = QLabel()
-        logo_pixmap = QPixmap("./Pictures/Ninja.png").scaled(100, 100)
+        logo_pixmap = QPixmap("./GUI/Pictures/Ninja.png").scaled(100, 100)
         logo.setPixmap(logo_pixmap)
         logo.setScaledContents(True)
         slogan = QLabel("Cash Ninja - Strike Fast. Save Smart. Master the Art of Money")

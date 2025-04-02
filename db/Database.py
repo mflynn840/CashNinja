@@ -2,6 +2,7 @@ import sqlite3
 from db.PortfolioManager import PortfolioManager
 from db.TickerManager import TickerManager
 from db.UserManager import UserManager
+from db.TransactionManager import TransactionManager
 
 
 class Database:
@@ -10,6 +11,8 @@ class Database:
         self.portfolio_manager = PortfolioManager(self._connect)
         self.ticker_manager = TickerManager(self._connect)
         self.user_manager = UserManager(self._connect)
+        self.transaction_manager = TransactionManager(self._connect)
+        
         #create the db and add all tickers if it does not exist
         if not self.is_init():
             self.create_schema()
@@ -66,6 +69,37 @@ class Database:
             FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE,
             FOREIGN KEY (ticker_id) REFERENCES tickers(id) ON DELETE CASCADE
         );
+        
+        CREATE TABLE if NOT EXISTS transactions (
+           id INTEGER PRIMARY KEY AUTOINCREMENT,
+           portfolio_id INTEGER,
+           ticker_symbol TEXT,
+           action TEXT,
+           quantity INTEGER,
+           price REAL,
+           timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+           FOREIGN KEY (portfolio_id) REFERENCES portfolios(id),
+           FOREIGN KEY (ticker_symbol) REFERENCES tickers(ticker_symbol)
+            
+        );
+        
+        CREATE TABLE IF NOT EXISTS technical_indicators (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker_id INTEGER,
+            date DATE,
+            rsi REAL,
+            macd REAL,
+            FOREIGN KEY (ticker_id) REFERENCES tickers(id) ON DELETE CASCADE
+        );
+        
+        CREATE TABLE IF NOT EXISTS price_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticker_id INTEGER,
+            date DATE,
+            close_price REAL,
+            volume INTEGER,
+            FOREIGN KEY (ticker_id) REFERENCES tickers(id) ON DELETE CASCADE
+        );
         '''
         
         conn = self._connect()
@@ -77,17 +111,19 @@ class Database:
     def is_init(self):
         conn = self._connect()
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('users', 'portfolios', 'tickers', 'positions')")
+        cursor.execute("""SELECT name FROM sqlite_master 
+                       WHERE type='table' AND name IN 
+                       ('users', 'portfolios', 'tickers', 
+                       'positions', 'transactions',
+                       'technical_indicators', 'price_history')""")
         tables = cursor.fetchall()
         
         if not tables:
             return False
 
         existing_tables = set(table[0] for table in tables)
-        return {'users', 'portfolios', 'tickers', 'positions'}.issubset(existing_tables)
+        return {'users', 'portfolios', 'tickers', 'positions', 'transactions', 'technical_indicators', 'price_history'}.issubset(existing_tables)
         
-
-
         
     def contains_user(self, username):
         conn = self._connect()
@@ -126,12 +162,14 @@ class Database:
 
         conn.commit()
         conn.close()
+        self.create_transaction(portfolio_id, tic, "sell", shares, self.get_ticker_price(tic))
         
     
     def buy_stock(self, username, portfolio_id, tic, shares):
         conn = self._connect()
         cursor = conn.cursor()
 
+        #see if the user can afford the transaction
         purchase_price = shares*self.get_ticker_price(tic)
         balance = self.get_balance(username)
 
@@ -139,11 +177,10 @@ class Database:
             print("error cant afford it")
             return False
         
+        #Take the money from their account and update their position
         self.withdrawal(username, purchase_price)
         tic_id = self.get_tic_id(tic)
         old_position = self.get_position(portfolio_id, tic)
-        
-        
         if old_position:
             new_shares = shares + old_position["shares"]
             new_cost_basis = purchase_price + old_position["cost_basis"]
@@ -156,8 +193,11 @@ class Database:
                            (portfolio_id, ticker_id, quantity, cost_basis) 
                            values (?, ?, ?, ?)""", (portfolio_id, tic_id, shares, purchase_price))
             conn.commit()
-        cursor.close()
+            
+        conn.close()
         
+        #generate a reciept
+        self.create_transaction(portfolio_id, tic, "buy", shares, self.get_ticker_price(tic))
 
     def __getattr__(self, name):
         if hasattr(self.user_manager, name):
@@ -166,6 +206,8 @@ class Database:
             return getattr(self.portfolio_manager, name)
         if hasattr(self.ticker_manager, name):
             return getattr(self.ticker_manager, name)
+        if hasattr(self.transaction_manager, name):
+            return getattr(self.transaction_manager, name)
         
 if __name__ == "__main__":
     foo = Database()
