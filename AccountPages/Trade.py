@@ -1,7 +1,7 @@
 
 from PyQt6.QtWidgets import (QWidget, QLabel, QVBoxLayout, 
-                             QMessageBox, QHBoxLayout,QPushButton,
-                             QFrame, QScrollArea, QLineEdit)
+                             QHBoxLayout,QPushButton,
+                             QFrame, QScrollArea)
 from DialogBoxes.TradeDialog import TradeDialog
 from DialogBoxes.PriceHistoryDialog import PriceHistoryDialog
 
@@ -56,7 +56,7 @@ class TradePage(QWidget):
     
     def show_price_history(self, tic):
         
-        dialog = PriceHistoryDialog(tic)
+        dialog = PriceHistoryDialog(self.db, tic)
         dialog.exec()
         
     def trade_stock(self, tic):

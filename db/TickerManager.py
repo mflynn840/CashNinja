@@ -1,6 +1,7 @@
 import sqlite3
 from db.util import get_ticker_dict
 import yfinance as yf
+import pandas as pd
 
 '''Implements logic to update, add and remove tickers from the available stocks'''
 
@@ -71,6 +72,14 @@ class TickerManager:
         conn.commit()
         conn.close()
     
+    def get_ticker_history(self, tic:str, start_date:pd.Timestamp):
+        stock = yf.Ticker(tic)
+        price_dat = stock.history(start=start_date)["Close"]
+        return price_dat.to_numpy()
+        
+        
+        
+        
     def get_ticker_price(self, tic:str):
         self.update_ticker(tic)
         conn = self._connect()
