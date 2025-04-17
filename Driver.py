@@ -45,8 +45,8 @@ class MainApplication(QWidget):
         self.positions_page.show()
         self.home_page.hide()
 
-    def switch_to_history(self, username: str):
-        self.history_page = HistoryPage(self.db, username, self.home_page)
+    def switch_to_history(self, portfolio_id: int):
+        self.history_page = HistoryPage(self.db, portfolio_id, self.home_page)
         self.history_page.show()
         self.home_page.hide()
 

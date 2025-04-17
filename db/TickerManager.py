@@ -77,9 +77,6 @@ class TickerManager:
         price_dat = stock.history(start=start_date)["Close"]
         return price_dat.to_numpy()
         
-        
-        
-        
     def get_ticker_price(self, tic:str):
         self.update_ticker(tic)
         conn = self._connect()

@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QWidget, QLabel, QVBoxLayout,
                              QLineEdit, QTableWidget, QTableWidgetItem)
 
 class HistoryPage(QWidget):
-    def __init__(self, db, portfolio_id, home_page):
+    def __init__(self, db, portfolio_id:int, home_page):
         super().__init__()
         self.db = db
         self.portfolio_id = portfolio_id
@@ -17,7 +17,7 @@ class HistoryPage(QWidget):
         
         #If no position dont generate the table
         if not all_transactions:
-            label = QLabel("This portfolio does not have any transactions yet.  You can buy stocks from the trade page")
+            label = QLabel("This portfolio does not have any transactions yet.")
             main_layout = QVBoxLayout()
             main_layout.addWidget(label)
         else:
@@ -30,13 +30,13 @@ class HistoryPage(QWidget):
             self.transactions_table = QTableWidget(self)
             self.transactions_table.setRowCount(len(all_transactions))
             self.transactions_table.setColumnCount(5)
-            
+            self.transactions_table.setHorizontalHeaderLabels(["Date", "Action", "Ticker", "Quantity", "Price"])
             for row, (action, quantity, ticker, price, timestamp) in enumerate(all_transactions):
                 self.transactions_table.setItem(row, 0, QTableWidgetItem(timestamp))
                 self.transactions_table.setItem(row, 1, QTableWidgetItem(action))
                 self.transactions_table.setItem(row, 2, QTableWidgetItem(ticker))
-                self.transactions_table.setItem(row, 3, QTableWidgetItem(quantity))
-                self.transactions_table.setItem(row, 4, QTableWidgetItem(price))
+                self.transactions_table.setItem(row, 3, QTableWidgetItem(str(quantity)))
+                self.transactions_table.setItem(row, 4, QTableWidgetItem(f"${price:,.2f}"))
             
             main_layout = QVBoxLayout()
             title = QLabel("Transaction History: ")

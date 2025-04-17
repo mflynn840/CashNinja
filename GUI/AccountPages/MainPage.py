@@ -9,7 +9,7 @@ from PyQt6.QtGui import QPixmap
 class HomePage(QWidget):
     trade_click = pyqtSignal(str, int)
     positions_click = pyqtSignal(str, int)
-    history_click = pyqtSignal(str)
+    history_click = pyqtSignal(int)
     summary_click = pyqtSignal(str)
     deposit_click = pyqtSignal(str)
     
@@ -153,7 +153,9 @@ class HomePage(QWidget):
         self.positions_click.emit(self.username, cur_portfolio_id)
         
     def open_history_page(self):
-        self.history_click.emit(self.username)
+        cur_portfolio_name = self.portfolio_selector.currentText()
+        cur_portfolio_id = self.db.get_portfolio_id(cur_portfolio_name, self.user_id)
+        self.history_click.emit(cur_portfolio_id)
 
     def open_summary_page(self):
         self.summary_click.emit(self.username)
