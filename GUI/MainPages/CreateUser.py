@@ -15,6 +15,7 @@ class CreateUserPage(QWidget):
         self.un_input = QLineEdit()
         self.pw_txt = QLabel("Password: ")
         self.pw_input = QLineEdit()
+        self.pw_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.email_txt = QLabel("Email: ")
         self.email_input = QLineEdit()
         self.create_button = QPushButton("Create Account")

@@ -5,6 +5,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationTool
 from matplotlib.figure import Figure
 import pandas as pd
 import numpy as np
+import matplotlib.dates as mdates
 
 class MatplotCanvas(FigureCanvasQTAgg):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -35,9 +36,25 @@ class PriceHistoryDialog(QDialog):
         
         cur_time = pd.Timestamp.now()
         start_date = cur_time - pd.DateOffset(days=days_back)
+        
         price_history = self.db.get_ticker_history(self.ticker, start_date)
-        days_history = np.arange(len(price_history))
-        self.plot_canvas.axes.plot(days_history, price_history)
+        
+        if isinstance(price_history, np.ndarray):
+            print("Expected pandas series not numpy array")
+            return
+        
+        self.plot_canvas.axes.clear()
+        self.plot_canvas.axes.plot(price_history.index, price_history.values)
+        
+        self.plot_canvas.axes.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        self.plot_canvas.axes.xaxis.set_major_locator(mdates.AutoDateLocator())
+        
+        self.plot_canvas.axes.tick_params(axis='x', rotation=45)
+        self.plot_canvas.axes.set_title(f"{self.ticker} Price History")
+        self.plot_canvas.axes.set_xlabel("Date")
+        self.plot_canvas.axes.set_ylabel("Price ($)")
+        self.plot_canvas.figure.tight_layout()
+        self.plot_canvas.draw()
         
 
         

@@ -12,7 +12,12 @@ from GUI.MainPages.CreateUser import CreateUserPage
 
 
 
+'''
+    Main driver for the GUI application
+    -Handles switching between pages by passing signals needed and redrawing scene
+    -Initilizes (and creates if needed) the database
 
+'''
 class MainApplication(QWidget):
     def __init__(self, db:Database):
         super().__init__()
@@ -50,8 +55,8 @@ class MainApplication(QWidget):
         self.history_page.show()
         self.home_page.hide()
 
-    def switch_to_summary(self, username: str):
-        self.summary_page = SummaryPage(self.db, username, self.home_page)
+    def switch_to_summary(self, username: str, portfolio_id: int):
+        self.summary_page = SummaryPage(self.db, username, portfolio_id, self.home_page)
         self.summary_page.show()
         self.home_page.hide()
 

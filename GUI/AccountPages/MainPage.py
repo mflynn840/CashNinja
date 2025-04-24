@@ -10,7 +10,7 @@ class HomePage(QWidget):
     trade_click = pyqtSignal(str, int)
     positions_click = pyqtSignal(str, int)
     history_click = pyqtSignal(int)
-    summary_click = pyqtSignal(str)
+    summary_click = pyqtSignal(str, int)
     deposit_click = pyqtSignal(str)
     
     
@@ -29,7 +29,7 @@ class HomePage(QWidget):
         
         self.username_label = QLabel(f"Welcome {self.username}", self)
         balance = self.db.get_balance(self.username)
-        self.balance_label = QLabel(f"Balance: ${balance}", self)
+        self.balance_label = QLabel(f"Balance: ${balance:,.2f}", self)
         
         self.buttons_widget = self.get_buttons_widget()
         self.user_info_widget = self.get_user_info_widget()
@@ -92,16 +92,25 @@ class HomePage(QWidget):
         
     def create_portfolio(self):
         
-        if self.portfolio_name_edit.text() not in self.db.get_portfolio_names(self.user_id):
-            self.db.create_portfolio(self.user_id, self.portfolio_name_edit.text())
-            self.portfolio_selector.addItem(self.portfolio_name_edit.text())
-        else:
+        portfolio_name = self.portfolio_name_edit.text()
+        if portfolio_name in self.db.get_portfolio_names(self.user_id):
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Icon.Critical)
             msg.setWindowTitle("Portfolio Creation Failed")
             msg.setText("Could not create Portfolio because this name is taken")
             msg.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg.exec()
+        elif portfolio_name == "":
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setWindowTitle("Portfolio Creation Failed")
+            msg.setText("Cannot create a portfolio with a blank name")
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.exec()
+        else:
+            self.db.create_portfolio(self.user_id, self.portfolio_name_edit.text())
+            self.portfolio_selector.addItem(self.portfolio_name_edit.text())
+            
 
     def get_portfolio_widget(self):
     
@@ -141,24 +150,21 @@ class HomePage(QWidget):
         self.balance_label.setText(f"Balance: ${balance:.2f}")  
         
     def open_trade_page(self):
+        self.trade_click.emit(self.username, self.get_cur_portfolio_id())
         
-        cur_portfolio_name = self.portfolio_selector.currentText()
-        cur_portfolio_id = self.db.get_portfolio_id(cur_portfolio_name, self.user_id)
-        self.trade_click.emit(self.username, cur_portfolio_id)
-        
-
     def open_positions_page(self):
-        cur_portfolio_name = self.portfolio_selector.currentText()
-        cur_portfolio_id = self.db.get_portfolio_id(cur_portfolio_name, self.user_id)
-        self.positions_click.emit(self.username, cur_portfolio_id)
+        self.positions_click.emit(self.username, self.get_cur_portfolio_id())
         
     def open_history_page(self):
-        cur_portfolio_name = self.portfolio_selector.currentText()
-        cur_portfolio_id = self.db.get_portfolio_id(cur_portfolio_name, self.user_id)
-        self.history_click.emit(cur_portfolio_id)
+        self.history_click.emit(self.get_cur_portfolio_id())
 
     def open_summary_page(self):
-        self.summary_click.emit(self.username)
+        self.summary_click.emit(self.username, self.get_cur_portfolio_id())
 
+    def get_cur_portfolio_id(self):
+        cur_portfolio_name = self.portfolio_selector.currentText()
+        cur_portfolio_id = self.db.get_portfolio_id(cur_portfolio_name, self.user_id)
+        return cur_portfolio_id
+        
     def open_deposit_page(self):
         self.deposit_click.emit(self.username)

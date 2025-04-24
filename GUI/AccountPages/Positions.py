@@ -54,7 +54,7 @@ class PositionsPage(QWidget):
             self.total_table.setColumnCount(3)
             self.total_table.setHorizontalHeaderLabels(["Total Cost Basis", "Total value", "Total profit/loss"])
             total_cost_basis = sum(position[2] for position in self.position_data)
-            total_value = sum(position[1] for position in self.position_data)
+            total_value = sum(position[1]*self.db.get_ticker_price(position[0]) for position in self.position_data)
             total_profit = total_value - total_cost_basis
             self.total_table.setItem(0, 0, QTableWidgetItem(f"${total_cost_basis:,.2f}"))
             self.total_table.setItem(0, 1, QTableWidgetItem(f"${total_value:,.2f}"))

@@ -75,7 +75,7 @@ class TickerManager:
     def get_ticker_history(self, tic:str, start_date:pd.Timestamp):
         stock = yf.Ticker(tic)
         price_dat = stock.history(start=start_date)["Close"]
-        return price_dat.to_numpy()
+        return price_dat
         
     def get_ticker_price(self, tic:str):
         self.update_ticker(tic)
