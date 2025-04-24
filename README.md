@@ -1,1 +1,1 @@
-Stock market simulator GUI in PyQt6
+Stock market simulator GUI in PyQt5
