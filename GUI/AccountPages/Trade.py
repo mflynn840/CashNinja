@@ -1,7 +1,7 @@
 
 from PyQt6.QtWidgets import (QWidget, QLabel, QVBoxLayout, 
                              QHBoxLayout,QPushButton,
-                             QFrame, QScrollArea)
+                             QFrame, QScrollArea, QLineEdit, QTableWidget, QTableWidgetItem)
 from ..DialogBoxes.TradeDialog import TradeDialog
 from ..DialogBoxes.PriceHistoryDialog import PriceHistoryDialog
 
@@ -14,46 +14,57 @@ class TradePage(QWidget):
         self.db = db
         self.username = username
         self.portfolio_id = portfolio_id
+        self.resize(600, 400)
         self.make_ui()
       
     def make_ui(self):
         
-        #make a frame for the widgets
-        frame = QFrame()
-        layout = QVBoxLayout()
-        all_stocks = self.db.get_all_tickers()
+        self.all_stocks = self.db.get_all_tickers()
         
-        #add each entry to the fram
-        for (tic, price) in all_stocks:
-            entry_layout = QHBoxLayout()
-            label = QLabel(f"{tic} : ${price:.2f}", self)
-            
-            #buttons
-            trade_button = QPushButton("Trade")
-            trade_button.clicked.connect(lambda checked, tic=tic: self.trade_stock(tic))
-            history_button = QPushButton("Price History")
-            history_button.clicked.connect(lambda checked, tic=tic: self.show_price_history(tic))
-            #row for the stock
-            entry_layout.addWidget(label)
-            entry_layout.addWidget(trade_button)
-            entry_layout.addWidget(history_button)
-            entry_widget = QWidget()
-            entry_widget.setLayout(entry_layout)
-            layout.addWidget(entry_widget)
+        #search bar
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText("Search by ticker...")
+        self.search_bar.textChanged.connect(self.filter_table)
         
-        #set layout for the frame
-        frame.setLayout(layout)
         
-        #create a scrollable area and put the frame in it
-        scroll_area = QScrollArea()
-        scroll_area.setWidget(frame)
-        scroll_area.setWidgetResizable(True)
+        self.table = QTableWidget()
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Ticker", "Trade", "Price History"])
+        self.table.setColumnWidth(0, 150)
+        self.populate_table(self.all_stocks)
+
         
+        #layout
         main_layout = QVBoxLayout()
-        main_layout.addWidget(scroll_area)
+        main_layout.addWidget(self.search_bar)
+        main_layout.addWidget(self.table)
         self.setLayout(main_layout)
 
-    
+    def populate_table(self, stocks):
+        self.table.setRowCount(len(stocks))
+        
+        for row, (tic, price) in enumerate(stocks):
+            
+            #create label and 2 buttons
+            label = QTableWidgetItem(f"{tic} : ${price:.2f}")
+            trade_button = QPushButton("Trade")
+            trade_button.clicked.connect(lambda _, tic=tic: self.trade_stock(tic))
+            history_button = QPushButton("Price History")
+            history_button.clicked.connect(lambda _, tic=tic: self.show_price_history(tic))
+            
+            #add to table
+            self.table.setItem(row, 0, label)
+            self.table.setCellWidget(row, 1, trade_button)
+            self.table.setCellWidget(row, 2, history_button)
+
+    def filter_table(self, text):
+        text = text.lower().strip()
+        
+        #select stock entries where the search bar is substring of ticker
+        filtered = [(tic, price) for (tic, price) in self.all_stocks
+                    if text in tic.lower()]
+        self.populate_table(filtered)
+        
     def show_price_history(self, tic):
         
         dialog = PriceHistoryDialog(self.db, tic)

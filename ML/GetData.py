@@ -1,1 +1,0 @@
-#aquire stock history prices to form a dataset

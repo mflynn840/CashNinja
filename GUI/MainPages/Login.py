@@ -26,6 +26,8 @@ class LoginPage(QWidget):
         self.username_input = QLineEdit()
         self.pw_txt = QLabel("Password: ")
         self.pw_input = QLineEdit()
+        self.pw_input.setEchoMode(QLineEdit.EchoMode.Password)
+        
         
         #buttons
         self.login_button = QPushButton("Login")
