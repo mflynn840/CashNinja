@@ -2,7 +2,8 @@ import sqlite3
 from db.util import get_ticker_dict
 import yfinance as yf
 import pandas as pd
-
+from itertools import islice
+import time
 '''Implements logic to update, add and remove tickers from the available stocks'''
 
 class TickerManager:
@@ -21,14 +22,37 @@ class TickerManager:
         conn.close()
         return True
         
-    def _add_all_tickers(self, debugLimit=50):
+    def _add_all_tickers(self, debug_limit=None, chunk_size=300):
         
         ticker_dict = get_ticker_dict()
-        for i, (tic, name) in enumerate(ticker_dict.items()):   
-            price = yf.Ticker(tic).history(period="1d")["Close"].iloc[-1]
-            self.create_ticker(tic, name, price)
-            if debugLimit is not None and i > debugLimit:
-                break
+        if debug_limit is not None:
+            ticker_dict = dict(list(ticker_dict.items())[:debug_limit])
+        
+        
+        ticker_items = list(ticker_dict.items())
+        conn = self._connect()
+        cursor = conn.cursor()
+        
+        for chunk in self.chunked(ticker_items, chunk_size):
+            tickers = [tic for tic, _ in chunk]
+            try:
+                prices = yf.download(tickers, period="1d", group_by="ticker", threads=True)
+            
+            except Exception as e:
+                print(f"Download failed for chunk: {e}")
+                return
+
+            for tic, name in chunk:
+                try:
+                    price = prices[tic]["Close"].iloc[-1]
+                    cursor.execute("INSERT INTO tickers (ticker_symbol, company_name, current_price) VALUES (?,?,?)",
+                               (tic, name, price))
+
+                except Exception as e:
+                    print(f"failed to insert {tic}: {e}")
+            time.sleep(0.5)
+        conn.commit()
+        conn.close()
 
     
     def get_tic_id(self, tic_name):
@@ -62,8 +86,26 @@ class TickerManager:
         
     def update_all_tickers(self):
         ticker_dict = get_ticker_dict()
-        for (tic, _) in ticker_dict.items():   
-            self.update_ticker(tic)
+        tickers = list(ticker_dict.keys())
+        
+        try:
+            prices = yf.download(tickers, period="1d", group_by="ticker", threads=True)
+        except Exception as e:
+            print("Download failed {e}")
+            return
+        
+        conn = self._connect()
+        cursor = conn.cursor()
+        for tic in tickers:
+            try:
+                price = prices[tic]["close"].iloc[-1]
+                cursor.execute("UPDATE tickers SET current_price=? WHERE ticker_symbol = ?", (price, tic))
+            except Exception as e:
+                print("failed to update {tic}: {e}")
+                
+                
+        conn.commit()
+        conn.close()
         
     def delete_ticker(self, tic):
         conn = self._connect()
@@ -85,3 +127,7 @@ class TickerManager:
         price = cursor.fetchone()[0]
         conn.close()
         return price
+    
+    def chunked(self, iterable, size):
+        it = iter(iterable)
+        return iter(lambda: list(islice(it, size)), [])
