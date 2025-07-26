@@ -4,13 +4,36 @@ import yfinance as yf
 import pandas as pd
 from itertools import islice
 import time
-'''Implements logic to update, add and remove tickers from the available stocks'''
 
+'''
+Manages the ticker data for stocks
+
+Responsibilities:
+-Insert, delete and update ticker symbols in the database
+-get live price data using yahoo finance
+-store/read all tickers from stored json
+'''
 class TickerManager:
     def __init__(self, db_connection):
+        
+        '''
+        Store the database connection function
+        '''
         self._connect = db_connection
         
     def create_ticker(self, symbol, name, price):
+        
+        '''
+        Add a new ticker to the database
+        
+        Args:
+            symbol (str) : Ticker symbol
+            name (str) : Full company name
+            price (float) : current stock price
+        
+        Returns:
+            bool: True if succesful, False otherwise
+        '''
         conn = self._connect()
         cursor = conn.cursor()
         try:
@@ -23,7 +46,14 @@ class TickerManager:
         return True
         
     def _add_all_tickers(self, debug_limit=None, chunk_size=300):
+        '''
+        Bulk add tickers from json that contains all NYSE tickers to seed db
         
+        Args:
+            debug_limit(int) : limit the number of tickers loaded
+            chunk_size (int) : number of tickers to process at a time
+        
+        '''
         ticker_dict = get_ticker_dict()
         if debug_limit is not None:
             ticker_dict = dict(list(ticker_dict.items())[:debug_limit])
@@ -50,12 +80,23 @@ class TickerManager:
 
                 except Exception as e:
                     print(f"failed to insert {tic}: {e}")
-            time.sleep(0.5)
+            time.sleep(0.5) #avoid rate limiting
         conn.commit()
         conn.close()
 
     
     def get_tic_id(self, tic_name):
+        
+        '''
+        Look up the primary key for a ticker symbol
+        
+        Args:
+            tic_name (str): Ticker symbol
+            
+        Returns:
+            int: Primary key ID of the ticker
+        
+        '''
         conn = self._connect()
         cursor = conn.cursor()
         
@@ -65,6 +106,14 @@ class TickerManager:
         return t_id
     
     def get_all_tickers(self):
+        
+        '''
+        Fetch all ticker symbols and current prices
+        
+        Returns:
+            list of (ticker, price): all ticker data
+        
+        '''
         conn = self._connect()
         cursor = conn.cursor()
         
@@ -75,6 +124,14 @@ class TickerManager:
         
         
     def update_ticker(self, symbol):
+        
+        '''
+        Refresh the price of a single ticker using Yahoo finance
+        
+        Args:
+            symbol(str): Ticker symbol to updates
+        
+        '''
         stock = yf.Ticker(symbol)
         price_dat = stock.history('1d')
         current_price = price_dat["Close"].iloc[0]
@@ -85,6 +142,9 @@ class TickerManager:
         conn.close()
         
     def update_all_tickers(self):
+        '''
+        Refresh prices for all tickers in the database using batched yahoo finance requests
+        '''
         ticker_dict = get_ticker_dict()
         tickers = list(ticker_dict.keys())
         
@@ -108,6 +168,13 @@ class TickerManager:
         conn.close()
         
     def delete_ticker(self, tic):
+        
+        '''
+        Remove a ticker from the database
+        
+        Args:
+            tic(str): ticker to be deleted
+        '''
         conn = self._connect()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM tickers WHERE ticker_symbol=?", (tic,))
@@ -115,11 +182,30 @@ class TickerManager:
         conn.close()
     
     def get_ticker_history(self, tic:str, start_date:pd.Timestamp):
+        
+        '''
+        Retrieve historical closing prices for the requested ticker
+        Args:
+            tic (str): ticker symbol
+            start_date (pd.Timestamp): start date for historical data
+            
+        Returns:
+            pd.Series: Historical closing prices
+        '''
         stock = yf.Ticker(tic)
         price_dat = stock.history(start=start_date)["Close"]
         return price_dat
         
     def get_ticker_price(self, tic:str):
+        
+        '''
+        Get the most recent price for a single ticker
+        Args:
+            tic (str) : Ticker symbol
+            
+        Returns:
+            float: Latest stock price
+        '''
         self.update_ticker(tic)
         conn = self._connect()
         cursor = conn.cursor()
@@ -129,5 +215,17 @@ class TickerManager:
         return price
     
     def chunked(self, iterable, size):
+        
+        '''
+        Helper method: Yield chunks from an iterable object
+        
+        Args:
+            iterable: Any iterable collection
+            size (int): number of items per chunk
+            
+        Returns:
+            iterator of lists: chunks of the original iterable
+        
+        '''
         it = iter(iterable)
         return iter(lambda: list(islice(it, size)), [])

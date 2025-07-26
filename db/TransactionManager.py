@@ -1,10 +1,23 @@
 
 
 class TransactionManager:
+    '''
+    Handles db queries for the transaction table
+    -Creating/deleting transactions
+    -Retrieving transactions
+
+    '''
     def __init__(self, db_connection):
+        '''
+        Save the db connection function
+        '''
         self._connect = db_connection
     
     def create_transaction(self, portfolio_id:int, tic:str, action:str, quantity:float, price:float):
+        
+        '''
+        Inserts a new transaction record into the database
+        '''
         conn = self._connect()
         cursor = conn.cursor()
         
@@ -22,6 +35,7 @@ class TransactionManager:
         return True
         
     def delete_transaction(self, transaction_id):
+        '''Deletes a transaction record from the database'''
         conn = self._connect()
         cursor = conn.cursor()
         cursor.execute("""DELETE FROM transactions WHERE transaction_id = ?""", (transaction_id))
@@ -29,6 +43,13 @@ class TransactionManager:
         conn.close()
         
     def get_all_transactions(self, portfolio_id):
+        
+        '''
+        Get all transactions for a given portfolio
+        Returns:
+            list of tuples (action, quantity, ticker_symbol, price, timestamp)
+        
+        '''
         conn = self._connect()
         cursor = conn.cursor()
         query = """SELECT action, quantity, ticker_symbol, price, timestamp
