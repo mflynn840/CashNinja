@@ -7,31 +7,41 @@ from db.TransactionManager import TransactionManager
 
 class Database:
     def __init__(self, db_name="users.db", update_tickers=False):
+        
+        '''
+        Initilize the main database
+        
+        Args:
+            -db_name (str): SQLite database file name
+            -update_tickers(bool): whether to fetch new ticker prices or not
+        '''
         self.db_name = db_name
+        
+        # Initilize subclasses that expose APIs for the table operations
         self.portfolio_manager = PortfolioManager(self._connect)
         self.ticker_manager = TickerManager(self._connect)
         self.user_manager = UserManager(self._connect)
         self.transaction_manager = TransactionManager(self._connect)
         
-        #create the db and add all tickers if it does not exist
+        #create schema and populate tickers if the DB is uninitilized
         if not self.is_init():
             self.create_schema()
             self._add_all_tickers()
             
-        #otherwise update the prices on all tickers
+        #If DB is initilized, update tickers if requested
         else:
             if update_tickers:
                 self.update_all_tickers()
 
 
-        
-        
-    ''' use private function connect to control how the db is modified
-    '''
+
     def _connect(self):
+        '''Internal helper to securley connect to DB'''
         return sqlite3.connect(self.db_name)
     
     def create_schema(self):
+        
+        '''Creates all neccesary tables if they dont exist'''
         schema = '''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,6 +119,7 @@ class Database:
         conn.close()
     
     def is_init(self):
+        '''Check if all tables already exist in database'''
         conn = self._connect()
         cursor = conn.cursor()
         cursor.execute("""SELECT name FROM sqlite_master 
@@ -126,6 +137,7 @@ class Database:
         
         
     def contains_user(self, username):
+        '''Check if the requested user is in the database'''
         conn = self._connect()
         cursor = conn.cursor()
         cursor.execute("SELECT 1 FROM users WHERE username = ?", (username,))
@@ -135,21 +147,28 @@ class Database:
     
 
     def sell_stock(self, username, portfolio_id, tic, shares):
+        '''
+        Sell shares of a stock from a users portfolio
+        -Update balance
+        -Adjust position
+        -logs transaction
+        
+        '''
         conn = self._connect()
         cursor = conn.cursor()
         
-        #ensure the user has enough stock to sell
+        #validate sufficient shares
         owned_shares = self.get_owned_shares(portfolio_id, tic)
         if owned_shares < shares:
             print("ERROR: you do not have enough shares to sell")
             return None
         
-        #get the sale price
+        #calculate proceeds
         sale_price = shares*self.get_ticker_price(tic)
         new_owned_shares = owned_shares - shares
         self.deposit(username, sale_price)
         
-        #modify the number of stocks owned
+        #update position
         if new_owned_shares == 0:
             cursor.execute('''DELETE FROM positions 
                            WHERE portfolio_id = ? AND ticker_id = 
@@ -162,14 +181,21 @@ class Database:
 
         conn.commit()
         conn.close()
+        
+        #log transaction
         self.create_transaction(portfolio_id, tic, "sell", shares, self.get_ticker_price(tic))
         
     
     def buy_stock(self, username, portfolio_id, tic, shares):
+        '''
+        Buy shares of a stock and update the users portfolio/balance
+        -log the transaction
+        
+        '''
         conn = self._connect()
         cursor = conn.cursor()
 
-        #see if the user can afford the transaction
+        #ensure the user can afford the transaction
         purchase_price = shares*self.get_ticker_price(tic)
         balance = self.get_balance(username)
 
@@ -177,10 +203,11 @@ class Database:
             print("error cant afford it")
             return False
         
-        #Take the money from their account and update their position
+        #Deduct balance and update position
         self.withdrawal(username, purchase_price)
         tic_id = self.get_tic_id(tic)
         old_position = self.get_position(portfolio_id, tic)
+        
         if old_position:
             new_shares = shares + old_position["shares"]
             new_cost_basis = purchase_price + old_position["cost_basis"]
@@ -188,6 +215,7 @@ class Database:
                            SET quantity = ?, cost_basis = ? 
                            WHERE portfolio_id = ? AND ticker_id = ?""", (new_shares, new_cost_basis, portfolio_id, tic_id))
             conn.commit()
+            
         else:
             cursor.execute("""INSERT INTO positions 
                            (portfolio_id, ticker_id, quantity, cost_basis) 
@@ -196,10 +224,15 @@ class Database:
             
         conn.close()
         
-        #generate a reciept
+        #log the transaction
         self.create_transaction(portfolio_id, tic, "buy", shares, self.get_ticker_price(tic))
 
     def __getattr__(self, name):
+        
+        '''
+        Delegate table specific queries to apropriate manager class
+            -Unifies APIs for each table
+        '''
         if hasattr(self.user_manager, name):
             return getattr(self.user_manager, name)
         if hasattr(self.portfolio_manager, name):
@@ -210,5 +243,6 @@ class Database:
             return getattr(self.transaction_manager, name)
         
 if __name__ == "__main__":
+    #debugging entry point
     foo = Database()
     print(foo.get_all_tickers())
